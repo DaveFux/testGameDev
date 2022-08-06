@@ -21,7 +21,7 @@ const APP = new PIXI.autoDetectRenderer({
 window.addEventListener("resize", resize);
 
 function resize() {
-  //APP.resize(window.innerWidth, window.innerHeight);
+  APP.resize(window.innerWidth, window.innerHeight);
   _w = window.innerWidth;
   _h = window.innerHeight;
   stage.position.y = _h / 2;
@@ -106,14 +106,13 @@ class Particle {
   //uses deltaTime from last frame to calculate new position
   update(deltaTime) {
     if (
-      checkOutOfBounds(this.realPosition, {
-        x: this.sprite.width * _wRatio,
-        y: this.sprite.height * _hRatio,
+      checkOutOfBounds(this.sprite.position, {
+        x: this.sprite.width,
+        y: this.sprite.height,
       })
     ) {
       this.sprite.alpha = 0;
       this.alive = false;
-
       console.log("out");
     } else {
       //divides by 1000 because velocity is in pixels per second, and deltatime is in miliseconds
