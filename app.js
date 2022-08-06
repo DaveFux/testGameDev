@@ -243,8 +243,8 @@ class Rocket extends Firework {
     };
     for (var i = 0; i < steps; i++) {
       // get velocity
-      const x = (radius * Math.cos((2 * Math.PI * i) / steps) * 100)*_scaleRatio;
-      const y = (radius * Math.sin((2 * Math.PI * i) / steps) * 100)*_scaleRatio;
+      const x = (radius * Math.cos((2 * Math.PI * i) / steps) * 100);
+      const y = (radius * Math.sin((2 * Math.PI * i) / steps) * 100);
       // add particle
       const particle = new Particle(this.colour);
       particle.fade = true;
@@ -341,6 +341,7 @@ const loop = (timestamp) => {
     _start = 0;
     stage.removeChildren();
     ticker.stop();
+    ticker.remove(loop);
     //cancelAnimationFrame(_loopId);
     //_start = -1;
     loadXMLDoc();
