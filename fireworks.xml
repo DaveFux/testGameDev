@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<FireworkDisplay>
+  <Firework begin="0" type="Rocket" colour="0xFF2020" duration="1000">
+    <Position x="0" y="-384"/>
+    <Velocity x="0" y="600"/>
+  </Firework>
+  <Firework begin="2000" type="Rocket" colour="0xFF2020" duration="1000">
+    <Position x="0" y="-384"/>
+    <Velocity x="0" y="600"/>
+  </Firework>
+  <Firework begin="3000" type="Rocket" colour="0xFF2020" duration="1000">
+    <Position x="-500" y="-384"/>
+    <Velocity x="180" y="600"/>
+  </Firework>
+
+  <Firework begin="11000" type="Rocket" colour="0xFFFF20" duration="1000">
+    <Position x="500" y="-384"/>
+    <Velocity x="-180" y="600"/>
+  </Firework>
+  <Firework begin="12000" type="Rocket" colour="0xFF2020" duration="1000">
+    <Position x="0" y="-384"/>
+    <Velocity x="0" y="600"/>
+  </Firework>
+  <Firework begin="13000" type="Rocket" colour="0xFF20FF" duration="1000">
+    <Position x="-500" y="-384"/>
+    <Velocity x="180" y="600"/>
+  </Firework>
+</FireworkDisplay>
