@@ -84,15 +84,18 @@ const XMLToFireworks = (xml) => {
   try {
     var i, xmlDoc;
     xmlDoc = xml.responseXML;
-    let fireworkDisplay = xmlDoc.getElementsByTagName("FireworkDisplay");
+    if (!xmlDoc) {
+      alert(WARNING_MESSAGE);
+      return;
+    }
 
+    let fireworkDisplay = xmlDoc.getElementsByTagName("FireworkDisplay");
     if (fireworkDisplay.length === 0) {
       alert(WARNING_MESSAGE);
       return;
     }
 
     let fireworks = fireworkDisplay[0].getElementsByTagName("Firework");
-
     if (fireworks.length === 0) {
       alert(WARNING_MESSAGE);
       return;
