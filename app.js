@@ -81,15 +81,23 @@ const startApp = () => {
 };
 
 const XMLToFireworks = (xml) => {
-  var i, xmlDoc;
-  xmlDoc = xml.responseXML;
-  let fireworks = xmlDoc.getElementsByTagName("Firework");
-  if (fireworks.length === 0) {
-    alert(WARNING_MESSAGE);
-    return;
-  }
-  for (i = 0; i < fireworks.length; i++) {
-    try {
+  try {
+    var i, xmlDoc;
+    xmlDoc = xml.responseXML;
+    let fireworkDisplay = xmlDoc.getElementsByTagName("FireworkDisplay");
+
+    if (fireworkDisplay.length === 0) {
+      alert(WARNING_MESSAGE);
+      return;
+    }
+
+    let fireworks = fireworkDisplay[0].getElementsByTagName("Firework");
+
+    if (fireworks.length === 0) {
+      alert(WARNING_MESSAGE);
+      return;
+    }
+    for (i = 0; i < fireworks.length; i++) {
       let fireworkInfo = fireworks[i];
       let begin = getFireworkAttribute(fireworkInfo, "begin", i);
       let duration = getFireworkAttribute(fireworkInfo, "duration", i);
@@ -145,9 +153,9 @@ const XMLToFireworks = (xml) => {
       ) {
       }
       createFirework(begin, duration, colour, position, type, velocity);
-    } catch (e) {
-      alert(e.message);
     }
+  } catch (e) {
+    alert(e.message);
   }
   startFireworks();
 };
