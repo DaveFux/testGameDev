@@ -82,7 +82,6 @@ class Particle {
     this.sprite.scale = this.realScale;
     this.sprite.anchor.set(0.5);
     this.velocity = { x: 0, y: 0 };
-    this.fade = false;
     this.alive = true;
     this.realPosition = { x: 0, y: 0 };
   }
@@ -240,13 +239,12 @@ class Rocket extends Firework {
       x: this.realPosition.x,
       y: this.realPosition.y,
     };
-    for (var i = 0; i < steps; i++) {
+    for (let i = 0; i < steps; i++) {
       // get velocity
-      const x = (radius * Math.cos((2 * Math.PI * i) / steps) * 100);
-      const y = (radius * Math.sin((2 * Math.PI * i) / steps) * 100);
+      const x = radius * Math.cos((2 * Math.PI * i) / steps) * 100;
+      const y = radius * Math.sin((2 * Math.PI * i) / steps) * 100;
       // add particle
       const particle = new Particle(this.colour);
-      particle.fade = true;
       particle.setPosition(position);
       particle.setVelocity({ x, y });
       stage.addChild(particle.sprite);
@@ -274,32 +272,61 @@ class Rocket extends Firework {
 
 class Fountain extends Firework {
   constructor(begin, duration, colour, position) {
-    super(begin, duration, colour, position, "Fountain", rocketTexture);
+    super(begin, duration, colour, position, "Fountain", fountainTexture);
   }
 
-  startFountain() {
-    const x = radius * Math.cos((2 * Math.PI * i) / steps);
-    const y = radius * Math.sin((2 * Math.PI * i) / steps);
-    const particle = new Particle();
-    particle.fade = true;
-    particle.setPosition(this.sprite.position);
-    particle.setVelocity({ x, y });
-    stage.addChild(particle.sprite);
-    this.particles.push(particle);
-    _entities.push(this.particles);
+  createParticles() {
+    if(this.particles.length >= 20){
+      return;
+    }
+    let randomParticleNumber = Math.floor(Math.random() * (6 - 3 + 1) + 1);
+    const position = {
+      x: this.realPosition.x,
+      y: this.realPosition.y,
+    };
+    if (this.particles.length + randomParticleNumber > 20) {
+      randomParticleNumber = randomParticleNumber - this.particles.length
+    }
+    randomParticleNumber = 10;
+    for (let i = 0; i < randomParticleNumber; i++) {
+      /*const x =
+          Math.floor(
+            Math.random() *
+              (Math.cos((7 * Math.PI) / 12) - Math.cos(Math.PI / 4) + 1) +
+              1
+          ) * 100;
+        const y =
+          Math.floor(
+            Math.random() *
+              (Math.sin((7 * Math.PI) / 12) - Math.sin(Math.PI / 4) + 1) +
+              1
+          ) * 100;*/
+      const x = 4 * Math.cos((2 * Math.PI * i) / randomParticleNumber) * 100;
+      const y = 4 * Math.sin((2 * Math.PI * i) / randomParticleNumber) * 100;
+      const particle = new Particle();
+      particle.setPosition(position);
+      particle.setVelocity({ x, y });
+      particle.sprite.alpha = 1;
+      stage.addChild(particle.sprite);
+      this.particles.push(particle);
+      _entities.push(this.particles);
+    }
   }
 
-  update(deltaTime) {
-    if (this.hasStarted) {
-      if (!this.hasExpired) {
-        if (this.duration <= currentTime - this.timeToBegin) {
-          this.expire();
-        }
+  update(
+    deltaTime //Possible TODO: change all those booleans into an enum with states: PREPARING, FLYING, EXPIRED
+  ) {
+    if (!this.hasExpired) {
+      if (!this.hasStarted) {
+        this.updateNotStarted(deltaTime);
       } else {
-        updateParticles(deltaTime);
+        this.createParticles();
+        this.updateDefault(deltaTime);
+        if(this.particles.length){
+          console.log("Update particles: ", this.particles)
+          this.updateParticles(deltaTime);
+        }
       }
-    } else {
-      this.start(elapsed);
     }
   }
 }
@@ -310,7 +337,6 @@ const createFirework = (begin, duration, colour, position, type, velocity) => {
     firework = new Rocket(begin, duration, colour, position, velocity);
   } else {
     firework = new Fountain(begin, duration, colour, position);
-    update;
   }
   _entities.push(firework);
   _fireworks.push(firework);
