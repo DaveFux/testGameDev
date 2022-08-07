@@ -48,15 +48,6 @@ const WARNING_MESSAGE =
   "Something is wrong with your Fireworks! Please check your XML file.";
 const FIREWORK_ERROR_MESSAGE = `Something is wrong with one of your Fireworks! Please check your XML file.`;
 
-const checkOutOfBounds = (objectPosition, textureScale) => {
-  return (
-    -textureScale.x - _w / 2 > objectPosition.x ||
-    objectPosition.x > _w / 2 + textureScale.x ||
-    -textureScale.y - _h / 2 > objectPosition.y ||
-    objectPosition.y > _h / 2 + textureScale.y
-  );
-};
-
 const ticker = new PIXI.Ticker();
 ticker.maxFPS = 60;
 const stage = new PIXI.Container();
@@ -73,301 +64,8 @@ const rocketTexture = PIXI.Texture.from("../assets/rocket.png");
 
 const fountainTexture = PIXI.Texture.from("../assets/fountain.png");
 
-class Particle {
-  constructor(colour) {
-    this.sprite = new PIXI.Sprite(particleTexture);
-    this.sprite.tint = colour;
-    this.realScale = { x: 0.4 * _scaleRatio, y: 0.4 * _scaleRatio };
-    this.sprite.scale = this.realScale;
-    this.sprite.anchor.set(0.5);
-    this.velocity = { x: 0, y: 0 };
-    this.fade = false;
-    this.alive = true;
-    this.realPosition = { x: 0, y: 0 };
-  }
-
-  setPosition(pos) {
-    this.realPosition.x = pos.x;
-    this.realPosition.y = pos.y;
-
-    this.setRelativePosition();
-  }
-
-  setRelativePosition() {
-    this.sprite.position.x = this.realPosition.x * _wRatio;
-    this.sprite.position.y = this.realPosition.y * _hRatio;
-  }
-
-  setVelocity(vel) {
-    this.velocity = vel;
-  }
-
-  //uses deltaTime from last frame to calculate new position
-  update(deltaTime) {
-    if (
-      checkOutOfBounds(this.sprite.position, {
-        x: this.sprite.width,
-        y: this.sprite.height,
-      })
-    ) {
-      this.sprite.alpha = 0;
-      this.alive = false;
-    } else {
-      if (this.fade && this.velocity.y <= 0) {
-        this.sprite.alpha = 0;
-        this.alive = false;
-      }
-      //divides by 1000 because velocity is in pixels per second, and deltatime is in miliseconds
-      this.realPosition.x += (this.velocity.x * deltaTime) / 1000;
-      this.realPosition.y += (this.velocity.y * deltaTime) / 1000;
-      this.velocity.y -= (GRAVITY * deltaTime) / 1000;
-
-      this.setRelativePosition();
-    }
-  }
-
-  resize() {
-    this.sprite.scale = {
-      x: this.realScale.x * _scaleRatio,
-      y: this.realScale.y * _scaleRatio,
-    };
-  }
-}
-
-class Firework {
-  constructor(begin, duration, colour, position, type, texture) {
-    this.sprite = new PIXI.Sprite(texture);
-    this.sprite.anchor.set(0.5, 0.5);
-    this.realScale = { x: 0.5 * _scaleRatio, y: 0.5 * _scaleRatio };
-    this.sprite.scale = this.realScale;
-    this.sprite.tint = colour;
-    this.sprite.alpha = 0;
-    this.particles = [];
-    this.timeToBegin = begin;
-    this.remainingLifetime = duration;
-    this.colour = colour;
-    this.type = type;
-    this.realPosition = { x: 0, y: 0 };
-    this.setPosition(position);
-    this.hasStarted = false;
-    this.hasExpired = false;
-    stage.addChild(this.sprite);
-  }
-
-  updateNotStarted(deltaTime) {
-    this.timeToBegin -= deltaTime;
-
-    if (this.timeToBegin <= 0) this.start();
-  }
-
-  updateDefault(deltaTime) {
-    this.remainingLifetime -= deltaTime;
-
-    if (this.remainingLifetime > 0) this.updatePhysics(deltaTime);
-    else this.expire();
-  }
-
-  updatePhysics(deltaTime) {
-    this.setRelativePosition();
-  }
-
-  start() {
-    this.hasStarted = true;
-    this.sprite.alpha = 1;
-  }
-
-  setPosition(pos) {
-    this.realPosition.x = pos.x;
-    this.realPosition.y = pos.y;
-    this.setRelativePosition();
-  }
-
-  setRelativePosition() {
-    this.sprite.position.x = this.realPosition.x * _wRatio;
-    this.sprite.position.y = this.realPosition.y * _hRatio;
-  }
-
-  expire() {
-    this.hasExpired = true;
-  }
-
-  updateParticles(deltaTime) {
-    this.particles = this.particles.filter((particle) => {
-      return particle.alive;
-    });
-    this.particles.forEach((particle) => {
-      particle.update(deltaTime);
-    });
-  }
-
-  resize() {
-    this.sprite.scale = {
-      x: this.realScale.x * _scaleRatio,
-      y: this.realScale.y * _scaleRatio,
-    };
-    this.particles.forEach((particle) => {
-      particle.resize();
-    });
-  }
-}
-
-class Rocket extends Firework {
-  constructor(begin, duration, colour, position, velocity) {
-    super(begin, duration, colour, position, "Rocket", rocketTexture);
-    this.velocity = velocity;
-  }
-
-  setVelocity(vel) {
-    this.velocity = vel;
-  }
-
-  explode() {
-    const steps = Math.floor(Math.random() * (100 - 80 + 1) + 80);
-    const radius = 4;
-    const position = {
-      x: this.realPosition.x,
-      y: this.realPosition.y,
-    };
-    for (let i = 0; i < steps; i++) {
-      // get velocity
-      const randomForce = Math.floor(Math.random() * (6 - 2 + 1) + 1);
-      const x = radius * Math.cos((2 * Math.PI * i) / steps) * 10 * randomForce;
-      const y = radius * Math.sin((2 * Math.PI * i) / steps) * 10 * randomForce;
-      // add particle
-      const particle = new Particle(this.colour);
-      particle.setPosition(position);
-      particle.setVelocity({ x, y });
-      stage.addChild(particle.sprite);
-      this.particles.push(particle);
-      _entities.push(particle);
-      this.sprite.alpha = 0;
-    }
-  }
-
-  updatePhysics(deltaTime) {
-    //divides by 1000 because velocity is in pixels per second, and deltatime is in miliseconds
-    this.realPosition.x += (this.velocity.x * deltaTime) / 1000;
-    this.realPosition.y += (this.velocity.y * deltaTime) / 1000;
-    this.velocity.y -= (GRAVITY * deltaTime) / 1000;
-
-    super.updatePhysics(deltaTime);
-  }
-
-  expire() {
-    this.explode();
-    super.expire();
-  }
-
-  update(
-    deltaTime //Possible TODO: change all those booleans into an enum with states: PREPARING, FLYING, EXPIRED
-  ) {
-    if (!this.hasExpired) {
-      if (!this.hasStarted) {
-        this.updateNotStarted(deltaTime);
-      } else {
-        this.updateDefault(deltaTime);
-      }
-    } else {
-      this.updateParticles(deltaTime);
-    }
-  }
-}
-
-class Fountain extends Firework {
-  constructor(begin, duration, colour, position) {
-    super(begin, duration, colour, position, "Fountain", fountainTexture);
-  }
-
-  createParticles() {
-    const steps = 20;
-    const radius = 1;
-    const position = {
-      x: this.realPosition.x,
-      y: this.realPosition.y,
-    };
-    for (let i = 0; i < steps; i++) {
-      // get velocity
-      const randomForceUp = Math.floor(Math.random() * (450 - 300 + 1) + 300);
-      const randomForceSides = Math.floor(Math.random() * (100 - 50 + 1) + 50);
-      const x =
-        radius *
-        Math.cos(Math.PI / 4 + (Math.PI * i) / 2 / steps) *
-        randomForceSides;
-      const y =
-        radius *
-        Math.sin(Math.PI / 4 + (Math.PI * i) / 2 / steps) *
-        randomForceUp;
-      // add particle
-      const particle = new Particle(this.colour);
-      particle.setPosition(position);
-      particle.setVelocity({ x, y });
-      particle.fade = true;
-      stage.addChild(particle.sprite);
-      this.particles.push(particle);
-      _entities.push(particle);
-      this.sprite.alpha = 0;
-    }
-  }
-
-  update(
-    deltaTime //Possible TODO: change all those booleans into an enum with states: PREPARING, FLYING, EXPIRED
-  ) {
-    if (!this.hasExpired) {
-      if (!this.hasStarted) {
-        this.updateNotStarted(deltaTime);
-      } else {
-        this.createParticles();
-        this.updateDefault(deltaTime);
-      }
-    }
-    if (this.particles.length) {
-      this.updateParticles(deltaTime);
-    }
-  }
-}
-
-const createFirework = (begin, duration, colour, position, type, velocity) => {
-  let firework;
-  if (type === "Rocket") {
-    firework = new Rocket(begin, duration, colour, position, velocity);
-  } else {
-    firework = new Fountain(begin, duration, colour, position);
-  }
-  _entities.push(firework);
-  _fireworks.push(firework);
-};
-
-const startFireworks = () => {
-  _start = 0;
-  ticker.add(loop);
-  ticker.start();
-};
-
-const clearFireworks = () => {
-  _fireworks = _fireworks.filter(
-    (firework) =>
-      !firework.hasExpired ||
-      (firework.hasExpired && firework.particles.length > 0)
-  );
-};
-
-const loop = (timestamp) => {
-  if (!_fireworks.length) {
-    _start = 0;
-    stage.removeChildren();
-    ticker.stop();
-    ticker.remove(loop);
-    startApp();
-  } else {
-    _fireworks.forEach((firework) => {
-      firework.update(ticker.elapsedMS);
-    });
-    clearFireworks();
-  }
-  APP.render(stage);
-};
-
-function startApp() {
+const startApp = () => {
+  //Loading xml
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function () {
     if (this.readyState == 4) {
@@ -380,30 +78,9 @@ function startApp() {
   };
   xmlhttp.open("GET", "fireworks.xml", true);
   xmlhttp.send();
-}
+};
 
-function getFireworkAttribute(fireworkInfo, tag, index, elementTag) {
-  if (fireworkInfo === undefined) {
-    throw new Error(
-      `Something is wrong with ${elementTag} of your Fireworks nº${
-        index + 1
-      }! Please check your XML file.`
-    );
-  } else {
-    let attrib = fireworkInfo.getAttribute(tag);
-    if (attrib === null) {
-      throw new Error(
-        `Something is wrong with ${tag} of your Fireworks nº${
-          index + 1
-        }! Please check your XML file.`
-      );
-    } else {
-      return attrib;
-    }
-  }
-}
-
-function XMLToFireworks(xml) {
+const XMLToFireworks = (xml) => {
   var i, xmlDoc;
   xmlDoc = xml.responseXML;
   let fireworks = xmlDoc.getElementsByTagName("Firework");
@@ -473,6 +150,28 @@ function XMLToFireworks(xml) {
     }
   }
   startFireworks();
-}
+};
+
+const startFireworks = () => {
+  _start = 0;
+  ticker.add(loop);
+  ticker.start();
+};
+
+const loop = (timestamp) => {
+  if (!_fireworks.length) {
+    _start = 0;
+    stage.removeChildren();
+    ticker.stop();
+    ticker.remove(loop);
+    startApp();
+  } else {
+    _fireworks.forEach((firework) => {
+      firework.update(ticker.elapsedMS);
+    });
+    clearFireworks();
+  }
+  APP.render(stage);
+};
 
 startApp();
