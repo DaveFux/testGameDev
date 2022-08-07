@@ -14,8 +14,6 @@ const APP = new PIXI.autoDetectRenderer({
   width: _w,
   height: _h,
   resolution: window.devicePixelRatio,
-  //autoDensity: true,
-  //autoResize: true,
 });
 
 window.addEventListener("resize", resize);
@@ -37,14 +35,15 @@ function resize() {
       firework.resize();
     });
   }
-  console.log("resize");
 }
 
 let _loopId;
 
 let _entities = [];
 let _fireworks = [];
-const GRAVITY = 600;
+const GRAVITY = 300;
+const MISSING_XML_MESSAGE =
+  "Couldn't find your Fireworks! Please check your XML file's name is \"fireworks\" or if it's missing.";
 const WARNING_MESSAGE =
   "Something is wrong with your Fireworks! Please check your XML file.";
 const FIREWORK_ERROR_MESSAGE = `Something is wrong with one of your Fireworks! Please check your XML file.`;
@@ -82,6 +81,7 @@ class Particle {
     this.sprite.scale = this.realScale;
     this.sprite.anchor.set(0.5);
     this.velocity = { x: 0, y: 0 };
+    this.fade = false;
     this.alive = true;
     this.realPosition = { x: 0, y: 0 };
   }
@@ -112,8 +112,11 @@ class Particle {
     ) {
       this.sprite.alpha = 0;
       this.alive = false;
-      console.log("out");
     } else {
+      if (this.fade && this.velocity.y <= 0) {
+        this.sprite.alpha = 0;
+        this.alive = false;
+      }
       //divides by 1000 because velocity is in pixels per second, and deltatime is in miliseconds
       this.realPosition.x += (this.velocity.x * deltaTime) / 1000;
       this.realPosition.y += (this.velocity.y * deltaTime) / 1000;
@@ -149,20 +152,6 @@ class Firework {
     this.hasStarted = false;
     this.hasExpired = false;
     stage.addChild(this.sprite);
-  }
-
-  update(
-    deltaTime //Possible TODO: change all those booleans into an enum with states: PREPARING, FLYING, EXPIRED
-  ) {
-    if (!this.hasExpired) {
-      if (!this.hasStarted) {
-        this.updateNotStarted(deltaTime);
-      } else {
-        this.updateDefault(deltaTime);
-      }
-    } else {
-      this.updateParticles(deltaTime);
-    }
   }
 
   updateNotStarted(deltaTime) {
@@ -233,7 +222,7 @@ class Rocket extends Firework {
   }
 
   explode() {
-    const steps = 10;
+    const steps = Math.floor(Math.random() * (100 - 80 + 1) + 80);
     const radius = 4;
     const position = {
       x: this.realPosition.x,
@@ -241,15 +230,16 @@ class Rocket extends Firework {
     };
     for (let i = 0; i < steps; i++) {
       // get velocity
-      const x = radius * Math.cos((2 * Math.PI * i) / steps) * 100;
-      const y = radius * Math.sin((2 * Math.PI * i) / steps) * 100;
+      const randomForce = Math.floor(Math.random() * (6 - 2 + 1) + 1);
+      const x = radius * Math.cos((2 * Math.PI * i) / steps) * 10 * randomForce;
+      const y = radius * Math.sin((2 * Math.PI * i) / steps) * 10 * randomForce;
       // add particle
       const particle = new Particle(this.colour);
       particle.setPosition(position);
       particle.setVelocity({ x, y });
       stage.addChild(particle.sprite);
       this.particles.push(particle);
-      _entities.push(this.particles);
+      _entities.push(particle);
       this.sprite.alpha = 0;
     }
   }
@@ -264,9 +254,22 @@ class Rocket extends Firework {
   }
 
   expire() {
-    console.log("BOOM");
     this.explode();
     super.expire();
+  }
+
+  update(
+    deltaTime //Possible TODO: change all those booleans into an enum with states: PREPARING, FLYING, EXPIRED
+  ) {
+    if (!this.hasExpired) {
+      if (!this.hasStarted) {
+        this.updateNotStarted(deltaTime);
+      } else {
+        this.updateDefault(deltaTime);
+      }
+    } else {
+      this.updateParticles(deltaTime);
+    }
   }
 }
 
@@ -276,40 +279,33 @@ class Fountain extends Firework {
   }
 
   createParticles() {
-    if(this.particles.length >= 20){
-      return;
-    }
-    let randomParticleNumber = Math.floor(Math.random() * (6 - 3 + 1) + 1);
+    const steps = 20;
+    const radius = 1;
     const position = {
       x: this.realPosition.x,
       y: this.realPosition.y,
     };
-    if (this.particles.length + randomParticleNumber > 20) {
-      randomParticleNumber = randomParticleNumber - this.particles.length
-    }
-    randomParticleNumber = 10;
-    for (let i = 0; i < randomParticleNumber; i++) {
-      /*const x =
-          Math.floor(
-            Math.random() *
-              (Math.cos((7 * Math.PI) / 12) - Math.cos(Math.PI / 4) + 1) +
-              1
-          ) * 100;
-        const y =
-          Math.floor(
-            Math.random() *
-              (Math.sin((7 * Math.PI) / 12) - Math.sin(Math.PI / 4) + 1) +
-              1
-          ) * 100;*/
-      const x = 4 * Math.cos((2 * Math.PI * i) / randomParticleNumber) * 100;
-      const y = 4 * Math.sin((2 * Math.PI * i) / randomParticleNumber) * 100;
-      const particle = new Particle();
+    for (let i = 0; i < steps; i++) {
+      // get velocity
+      const randomForceUp = Math.floor(Math.random() * (450 - 300 + 1) + 300);
+      const randomForceSides = Math.floor(Math.random() * (100 - 50 + 1) + 50);
+      const x =
+        radius *
+        Math.cos(Math.PI / 4 + (Math.PI * i) / 2 / steps) *
+        randomForceSides;
+      const y =
+        radius *
+        Math.sin(Math.PI / 4 + (Math.PI * i) / 2 / steps) *
+        randomForceUp;
+      // add particle
+      const particle = new Particle(this.colour);
       particle.setPosition(position);
       particle.setVelocity({ x, y });
-      particle.sprite.alpha = 1;
+      particle.fade = true;
       stage.addChild(particle.sprite);
       this.particles.push(particle);
-      _entities.push(this.particles);
+      _entities.push(particle);
+      this.sprite.alpha = 0;
     }
   }
 
@@ -322,11 +318,10 @@ class Fountain extends Firework {
       } else {
         this.createParticles();
         this.updateDefault(deltaTime);
-        if(this.particles.length){
-          console.log("Update particles: ", this.particles)
-          this.updateParticles(deltaTime);
-        }
       }
+    }
+    if (this.particles.length) {
+      this.updateParticles(deltaTime);
     }
   }
 }
@@ -357,19 +352,12 @@ const clearFireworks = () => {
 };
 
 const loop = (timestamp) => {
-  // _start += ticker.elapsedMS;
-
-  // console.log(ticker.elapsedMS/10);
-  //TODO: increment ticker.elapsedMS
-  //_loopId = requestAnimationFrame(loop);
   if (!_fireworks.length) {
     _start = 0;
     stage.removeChildren();
     ticker.stop();
     ticker.remove(loop);
-    //cancelAnimationFrame(_loopId);
-    //_start = -1;
-    loadXMLDoc();
+    startApp();
   } else {
     _fireworks.forEach((firework) => {
       firework.update(ticker.elapsedMS);
@@ -379,11 +367,15 @@ const loop = (timestamp) => {
   APP.render(stage);
 };
 
-function loadXMLDoc() {
+function startApp() {
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function () {
-    if (this.readyState == 4 && this.status == 200) {
-      XMLToFireworks(this);
+    if (this.readyState == 4) {
+      if (this.status == 200) {
+        XMLToFireworks(this);
+      } else if (this.status == 404) {
+        alert(MISSING_XML_MESSAGE);
+      }
     }
   };
   xmlhttp.open("GET", "fireworks.xml", true);
@@ -477,12 +469,10 @@ function XMLToFireworks(xml) {
       }
       createFirework(begin, duration, colour, position, type, velocity);
     } catch (e) {
-      console.log(e);
       alert(e.message);
     }
   }
   startFireworks();
-  console.log(fireworks);
 }
 
-loadXMLDoc();
+startApp();
