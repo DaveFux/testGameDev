@@ -19,8 +19,10 @@ class Rocket extends Firework {
       // get velocity
       const randomForceUp = Math.floor(Math.random() * (6 - 2 + 1) + 2);
       const randomForceSides = Math.floor(Math.random() * (6 - 2 + 1) + 2);
-      const x = radius * Math.cos((2 * Math.PI * i) / steps) * 10 * randomForceSides;
-      const y = radius * Math.sin((2 * Math.PI * i) / steps) * 10 * randomForceUp;
+      const x =
+        radius * Math.cos((2 * Math.PI * i) / steps) * 10 * randomForceSides;
+      const y =
+        radius * Math.sin((2 * Math.PI * i) / steps) * 10 * randomForceUp;
       // add particle
       const particle = new Particle(this.colour);
       particle.setPosition(position);

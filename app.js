@@ -161,7 +161,7 @@ const startFireworks = () => {
 const loop = (timestamp) => {
   if (!_fireworks.length) {
     _start = 0;
-    _entities=[]
+    _entities = [];
     stage.removeChildren();
     ticker.stop();
     ticker.remove(loop);
